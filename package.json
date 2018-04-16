@@ -1,0 +1,25 @@
+{
+  "name": "carkeeper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "test",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arvindh-swami/Carkeeper.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/arvindh-swami/Carkeeper/issues"
+  },
+  "homepage": "https://github.com/arvindh-swami/Carkeeper#readme",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "firebase-admin": "^5.12.0",
+    "node": "^9.11.0"
+  }
+}
