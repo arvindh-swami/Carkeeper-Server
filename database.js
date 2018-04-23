@@ -9,13 +9,15 @@ module.exports = {
     removeCar,
     updateCar,
     addPriorDate,
+		getLatestPriorDate,
     updateNextDate,
     getIncrement,
 		getEmailId,
 		resetPassword,
 		updateUser,
 		removeUser,
-		getUser
+		getUser,
+		checkNotif
 	}
 
 // Create Functions
@@ -193,17 +195,36 @@ function updateCar(userRef, uid, carName, make, model, year, level) {
     }
 }
 
-function addPriorDate(userRef, uid, carName, serviceName, priorDate) {
-  var ref = userRef.child(uid).child("Garage").child(carName).child("Service List").child(serviceName);
-  var priorDatesList;
-  ref.once("value").then(function(snapshot){
-    priorDatesList = snapshot.val().priorDates;
-    priorDatesList.unshift(priorDate);
-    console.log(priorDatesList);
+function addPriorDate(userRef, uid, carName, serviceName, priorDate, price, location) {
+  var ref = userRef.child(uid).child("Garage").child(carName).child("Service List").child(serviceName).child("priorDates");
+	var list = {};
+	ref.once("value").then(function(snapshot){
+		list["price"] = price;
+		list["location"] = {};
+		list["location"]["address"] = location.address;
+		list["location"]["lat"] = location.lat;
+		list["location"]["long"] = location.long;
     ref.update({
-      "priorDates": priorDatesList
+      [priorDate]:list
     });
   });
+}
+
+function getLatestPriorDate(userRef, uid, carName, serviceName, callback) {
+	var ref = userRef.child(uid).child("Garage").child(carName).child("Service List").child(serviceName).child("priorDates");
+	var min = new Date(1950,0,1);
+	var latest="";
+	ref.once("value").then(function(snapshot) {
+	 	snapshot.forEach(function(childSnapshot) {
+			key=childSnapshot.key;
+			var date=new Date(key.substring(0,4),key.substring(key.indexOf('-')+1,key.lastIndexOf('-'))-1,key.substring(key.lastIndexOf('-')+1));
+			if((date-min)>0) {
+				min=date;
+				latest=key;
+			}
+		});
+		callback(latest);
+	});
 }
 
 function updateNextDate(userRef, uid, carName, serviceName, nextDate) {
@@ -289,3 +310,45 @@ function getUser(userRef, uid, callback) {
 		callback(json);
 	});
 }
+
+function checkNotif(userRef, uid) {
+	var ref = userRef.child(uid).child("Garage");
+	var json = {};
+	var servicesDue;
+	var numServicesDue=0;
+	ref.once("value").then(function(snapshot) {
+      snapshot.forEach(function(childSnapshot) {
+        var key = childSnapshot.key;
+				var b=true;
+				var b2=false;
+        if (key != "carCount") {
+					getCar(userRef, uid, key, (services)=> {
+							for(var service in services) {
+								var dt = services[service]["nextDate"];
+								var nextD = new Date(dt.substring(0,4),dt.substring(dt.indexOf('-')+1,dt.lastIndexOf('-'))-1,dt.substring(dt.lastIndexOf('-')+1));
+								var today = new Date();
+								var dif = Math.floor((Date.UTC(nextD.getFullYear(), nextD.getMonth(), nextD.getDate()) - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) ) /(1000 * 60 * 60 * 24));
+								if(dif<=1){
+									b2=true;
+									if(b) {
+										b=false;
+										servicesDue = key+": "+servicesDue+service+", ";
+									}
+									else {
+										servicesDue+=service+", ";
+									}
+									numServicesDue++;
+								}
+							}
+						});
+						if(b2) {
+							servicesDue+="\n";
+						}
+					}
+    	});
+  	});
+		if(numServicesDue>0) {
+			console.log(servicesDuePerCar);
+			emailjs.send("gmail", "service_soon", {"email":"kogut.ada.000@gmail.com","service":"Brake","name":"Adam Kogut","date":"Tuesday, 4/17","action_url":"bit.ly/CarKeeper"})
+		}
+	}

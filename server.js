@@ -89,7 +89,7 @@ function test() {
 
   database.updateCar(userRef, "2222", "My First car", "undefined", "undefined", "2016", "undefined");
 
-  database.addPriorDate(userRef, "1111", "My First car", "Engine Oil", "2019-1-15");
+  //database.addPriorDate(userRef, "1111", "My First car", "Engine Oil", "2019-1-15");
   database.updateNextDate(userRef, "1111", "My First car", "Engine Oil", "2019-1-15");
 
   database.getIncrement(userRef, "1111", "My First car", "Engine Oil", (x) => {
@@ -110,8 +110,13 @@ function test() {
     console.log(x);
   });
 
-  */
 
+  database.addPriorDate(userRef,"436","Test","Chassis Lubrication","2020-1-15","100",{"address":"Adams Home","lat":"100","long":"200"});
+  */
+  database.checkNotif(userRef, "247");
+  //database.getLatestPriorDate(userRef, "436","Test","Chassis Lubrication", (x) => {
+  //  console.log(x);
+  //});
 }
 
 //encrypt password
@@ -374,12 +379,18 @@ app.post('/GET-ALL-SERVICES', function (req, res) {
 app.post('/ADD-PRIOR-DATE', function (req, res) {
   console.log("Request to all prior date received");
   // Add Prior date to Prior Dates list
-  database.addPriorDate(userRef, req.body.uid, req.body.carName, req.body.serviceName, req.body.priorDate);
+  database.addPriorDate(userRef, req.body.uid, req.body.carName, req.body.serviceName, req.body.priorDate, req.body.price, req.body.location);
 
   // Add Increment to Months
   database.getIncrement(userRef, req.body.uid, req.body.carName, req.body.serviceName, (incrementInt) => {
     // Update Next Date
-    var dates = req.body.priorDate.split("-");
+
+
+    var dt="";
+    database.getLatestPriorDate(userRef, req.body.uid, req.body.carName, req.body.serviceName, (x) => {
+      dt=x;
+    });
+    var dates = req.body.dt.split("-");
     for( var i = 0; i < dates.length; i++) {
       dates[i] = +dates[i];
     }
