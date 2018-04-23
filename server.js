@@ -389,27 +389,28 @@ app.post('/ADD-PRIOR-DATE', function (req, res) {
     var dt="";
     database.getLatestPriorDate(userRef, req.body.uid, req.body.carName, req.body.serviceName, (x) => {
       dt=x;
+      var dates = dt.split("-");
+      for( var i = 0; i < dates.length; i++) {
+        dates[i] = +dates[i];
+      }
+
+      console.log("Increment: " + incrementInt);
+      dates[1] += incrementInt;
+      if (dates[1] > 12) {
+        dates[1] -= 12;
+        dates[0] += 1;
+      }
+      var nextDate = dates[0] + "-" + dates[1] + "-" + dates[2];
+      console.log("Next Date: " + nextDate);
+
+      database.updateNextDate(userRef, req.body.uid, req.body.carName, req.body.serviceName, nextDate);
+
+      res.json({
+        "status": true
+      });
+      console.log("Prior date added and next date updated");
     });
-    var dates = req.body.dt.split("-");
-    for( var i = 0; i < dates.length; i++) {
-      dates[i] = +dates[i];
-    }
 
-    console.log("Increment: " + incrementInt);
-    dates[1] += incrementInt;
-    if (dates[1] > 12) {
-      dates[1] -= 12;
-      dates[0] += 1;
-    }
-    var nextDate = dates[0] + "-" + dates[1] + "-" + dates[2];
-    console.log("Next Date: " + nextDate);
-
-    database.updateNextDate(userRef, req.body.uid, req.body.carName, req.body.serviceName, nextDate);
-
-    res.json({
-      "status": true
-    });
-    console.log("Prior date added and next date updated");
   });
 });
 
