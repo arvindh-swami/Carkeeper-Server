@@ -113,7 +113,8 @@ function test() {
 
   database.addPriorDate(userRef,"436","Test","Chassis Lubrication","2020-1-15","100",{"address":"Adams Home","lat":"100","long":"200"});
   */
-  database.checkNotif(userRef, "247");
+  //database.checkNotif(userRef, "247");
+  database.forgotPassword(userRef, "aswami@purdue.edu");
   //database.getLatestPriorDate(userRef, "436","Test","Chassis Lubrication", (x) => {
   //  console.log(x);
   //});

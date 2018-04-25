@@ -14,6 +14,7 @@ module.exports = {
     getIncrement,
 		getEmailId,
 		resetPassword,
+		forgotPassword,
 		updateUser,
 		removeUser,
 		getUser,
@@ -261,6 +262,27 @@ function resetPassword(userRef, uid, oldPassword, newPassword, callback) {
   });
 }
 
+function forgotPassword(userRef, email, callback) {
+  var ref = userRef;
+	ref.once("value").then(function(snapshot) {
+    snapshot.forEach(function(childSnapshot) {
+  		uid=childSnapshot.key;
+			var ref2=userRef.child(uid);
+			ref2.once("value").then(function(babySnapshot) {
+				var emailId=babySnapshot.email;
+				var name=babySnapshot.firstname;
+				if(emailId==email) {
+					console.log(email);
+					emailjs.send("gmail","forgot_password",{"email":email,"name":name,"action_url":"bit.ly/CarKeeper"});
+					callback(true);
+				}
+			});
+		});
+		callback(false);
+	});
+}
+
+
 function updateUser(userRef, uid, firstname, lastname, phone, notifPhone, notifEmail) {
   var ref = userRef.child(uid);
     if (firstname != "undefined") {
@@ -314,8 +336,9 @@ function getUser(userRef, uid, callback) {
 function checkNotif(userRef, uid) {
 	var ref = userRef.child(uid).child("Garage");
 	var json = {};
-	var servicesDue;
+	var servicesDue="\n";
 	var numServicesDue=0;
+	var dateDue;
 	ref.once("value").then(function(snapshot) {
       snapshot.forEach(function(childSnapshot) {
         var key = childSnapshot.key;
@@ -328,27 +351,36 @@ function checkNotif(userRef, uid) {
 								var nextD = new Date(dt.substring(0,4),dt.substring(dt.indexOf('-')+1,dt.lastIndexOf('-'))-1,dt.substring(dt.lastIndexOf('-')+1));
 								var today = new Date();
 								var dif = Math.floor((Date.UTC(nextD.getFullYear(), nextD.getMonth(), nextD.getDate()) - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) ) /(1000 * 60 * 60 * 24));
-								if(dif<=1){
+								console.log(dif);
+								if(dif==1) {
+									dateDue=dt;
 									b2=true;
 									if(b) {
 										b=false;
-										servicesDue = key+": "+servicesDue+service+", ";
+										servicesDue += key+": "+service+", ";
 									}
 									else {
-										servicesDue+=service+", ";
+										servicesDue+=servicesDue+service+", ";
 									}
 									numServicesDue++;
 								}
 							}
-						});
+						})
 						if(b2) {
+							servicesDue = servicesDue.substring(0,servicesDue.length()-2);
 							servicesDue+="\n";
 						}
 					}
     	});
   	});
+		console.log(servicesDue);
+		console.log(dateDue);
+		console.log(numServicesDue);
 		if(numServicesDue>0) {
-			console.log(servicesDuePerCar);
-			emailjs.send("gmail", "service_soon", {"email":"kogut.ada.000@gmail.com","service":"Brake","name":"Adam Kogut","date":"Tuesday, 4/17","action_url":"bit.ly/CarKeeper"})
+			//console.log(servicesDue);
+			//console.log(dateDue);
+			getUser(userRef, uid, (user) => {
+				emailjs.send("gmail", "service_soon", {"email":user[email],"service":servicesDue,"name":user[firstname],"date":dt,"action_url":"bit.ly/CarKeeper"});
+			})
 		}
 	}
