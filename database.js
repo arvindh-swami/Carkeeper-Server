@@ -19,6 +19,7 @@ module.exports = {
 		removeUser,
 		getUser,
 		checkNotif,
+		checkAllNotif
 	}
 
 const axios = require('axios');
@@ -78,7 +79,7 @@ function addService(userRef, uid, carName, serviceName, increment) {
       [serviceName]: ""
     })
     ref.child(serviceName).update({
-      "priorDates": "",
+      "priorDates": {},
       "nextDate": "",
       "increment": increment
     })
@@ -201,13 +202,23 @@ function updateCar(userRef, uid, carName, make, model, year, level) {
 function addPriorDate(userRef, uid, carName, serviceName, priorDate, price, location) {
   var ref = userRef.child(uid).child("Garage").child(carName).child("Service List").child(serviceName).child("priorDates");
 	var list = {};
+	list[priorDate]={};
 	ref.once("value").then(function(snapshot){
-		list["price"] = price;
+		if(price!=undefined) {
+			list["price"] = price;
+		}
+		else {
+			list["price"] = "null";
+		}
 		list["location"] = {};
-		list["location"]["address"] = location.address;
-		list["location"]["lat"] = location.lat;
-		list["location"]["long"] = location.long;
-    ref.update({
+		if(location.address!=undefined) {
+			list["location"]["address"] = location.address;
+		}
+		if(location.lat!=undefined&&location.long!=undefined) {
+			list["location"]["lat"] = location.lat;
+			list["location"]["long"] = location.long;
+		}
+		ref.update({
       [priorDate]:list
     });
   });
@@ -355,7 +366,7 @@ function getUser(userRef, uid, callback) {
 	});
 }
 
-function checkNotif(userRef, uid, callback) {
+function checkNotif(userRef, uid) {
 	var ref = userRef.child(uid).child("Garage");
 	var json = {};
 	var servicesDue="";
@@ -395,32 +406,36 @@ function checkNotif(userRef, uid, callback) {
 				}
     	});
   	});
-	 setTimeout(function() {
-		 //console.log(servicesDue)
-		 if(numServicesDue>0) {
- 			getUser(userRef, uid, (user) => {
- 				var data = {
- 					service_id: 'gmail',
- 					template_id: 'service_soon',
- 					user_id: 'user_dIUsSOu0uyfAzEOurtMFv',
- 					template_params: {
- 						"email":user["email"],
- 						"service":servicesDue,
- 						"name":user["firstname"],
- 						"date":dateDue,
- 						"action_url":"bit.ly/CarKeeper"
+		setTimeout(function() {
+			if(numServicesDue>0) {
+ 				getUser(userRef, uid, (user) => {
+ 					var data = {
+ 						service_id: 'gmail',
+ 						template_id: 'service_soon',
+ 						user_id: 'user_dIUsSOu0uyfAzEOurtMFv',
+ 						template_params: {
+ 							"email":user["email"],
+ 							"service":servicesDue,
+ 							"name":user["firstname"],
+ 							"date":dateDue,
+ 							"action_url":"bit.ly/CarKeeper"
+ 						}
  					}
- 				}
- 				axios.post('https://api.emailjs.com/api/v1.0/email/send',{
-           ...data,
-         }).catch((e)=>{
+ 					axios.post('https://api.emailjs.com/api/v1.0/email/send',{
+           	...data,
+         	}).catch((e)=>{
            console.log(e);
-           callback(false);
-         })
- 				callback(true);
-         return;
- 			});
- 		}
-	 },3000);
+				 })
+				 return;
+ 				});
+ 			}
+		},1000);
+	}
 
+	function checkAllNotif(userRef) {
+		userRef.once("value").then(function(snapshot) {
+	  	snapshot.forEach(function(childSnapshot) {
+	    	checkNotif(userRef,childSnapshot.key);
+			});
+		});
 	}

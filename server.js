@@ -125,6 +125,7 @@ function test() {
   //database.getLatestPriorDate(userRef, "436","Test","Chassis Lubrication", (x) => {
   //  console.log(x);
   //});
+  //database.checkAllNotif(userRef);
 }
 
 //encrypt password
