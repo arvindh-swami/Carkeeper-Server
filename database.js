@@ -300,7 +300,10 @@ function forgotPassword(userRef, email, callback) {
 				var emailId=babySnapshot.val().email;
 				var name=babySnapshot.firstname;
 				if(emailId === email) {
+          uid=childSnapshot.key;
 					found=true;
+          //console.log(uid)
+          //console.log(emailId)
           var data = {
             service_id: 'gmail',
             template_id: 'forgot_password',
