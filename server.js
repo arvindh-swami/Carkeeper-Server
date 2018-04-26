@@ -114,7 +114,14 @@ function test() {
   database.addPriorDate(userRef,"436","Test","Chassis Lubrication","2020-1-15","100",{"address":"Adams Home","lat":"100","long":"200"});
   */
   //database.checkNotif(userRef, "247");
-  database.forgotPassword(userRef, "aswami@purdue.edu");
+/*  database.forgotPassword(userRef, "basu12@purdue.edu", (cb) => {
+    console.log(cb);
+  });*/
+
+  /*database.checkNotif(userRef, "247", (cb) => {
+    console.log(cb);
+  });*/
+
   //database.getLatestPriorDate(userRef, "436","Test","Chassis Lubrication", (x) => {
   //  console.log(x);
   //});
@@ -209,6 +216,24 @@ app.post('/RESET-PASSWORD', function (req, res) {
   });
 });
 
+app.post('/FORGOT-PASSWORD', function(req,res) {
+  console.log("Received request for FORGOT PASSWORD");
+  database.forgotPassword(userRef, req.body.email, (userFound) => {
+    if(userFound) {
+      console.log("Email sent");
+      res.json({
+        "status": true
+      });
+    }
+    else {
+      console.log("User not found");
+      res.json({
+        "status": false
+      });
+    }
+  });
+});
+
 app.post('/GET-EMAIL-ID', function (req, res) {
   database.getEmailId(userRef, req.body.uid, (x) => {
     console.log("Received request to get email");
@@ -261,6 +286,7 @@ app.post('/ADD-SERVICE', function (req, res) {
   console.log("Received request to add service");
   // Find increment using lists and set next Date
   var nextDate, increment, incrementInt;
+  //console.log(incrementInt);
   if (req.body.incrementInt != "undefined") {
       incrementInt = req.body.incrementInt;
       increment = incrementInt + " months";
@@ -274,27 +300,15 @@ app.post('/ADD-SERVICE', function (req, res) {
     increment = "12 months";
     incrementInt = 12;
   }
+  setTimeout(function() {
   console.log("Increment: " + increment);
 
-  // Use prior date to calculate next date
-  var dates = req.body.priorDate.split("-");
-  for( var i = 0; i < dates.length; i++) {
-    dates[i] = +dates[i];
-  }
-  // Add Increment to Months
-  dates[1] += incrementInt;
-  if (dates[1] > 12) {
-    dates[1] -= 12;
-    dates[0] += 1;
-  }
-  nextDate = dates[0] + "-" + dates[1] + "-" + dates[2];
-  console.log("Next Date: " + nextDate);
-
-  database.addService(userRef, req.body.uid, req.body.carName, req.body.serviceName, [req.body.priorDate], nextDate, increment);
+  database.addService(userRef, req.body.uid, req.body.carName, req.body.serviceName, increment);
   res.json({
     "status": true
   });
   console.log("New service added");
+},1000);
 });
 
 app.post('/ADD-CUSTOM-SERVICE', function (req, res) {
@@ -308,27 +322,16 @@ app.post('/ADD-CUSTOM-SERVICE', function (req, res) {
     increment = "3 months";
     incrementInt = 3;
   }
+  setTimeout(function() {
   console.log("Increment: " + increment);
 
-  // Use prior date to calculate next date
-  var dates = req.body.priorDate.split("-");
-  for( var i = 0; i < dates.length; i++) {
-    dates[i] = +dates[i];
-  }
-  // Add Increment to Months
-  dates[1] += incrementInt;
-  if (dates[1] > 12) {
-    dates[1] -= 12;
-    dates[0] += 1;
-  }
-  nextDate = dates[0] + "-" + dates[1] + "-" + dates[2];
-  console.log("Next Date: " + nextDate);
 
-  database.addService(userRef, req.body.uid, req.body.carName, req.body.serviceName, [req.body.priorDate], nextDate, increment);
+  database.addService(userRef, req.body.uid, req.body.carName, req.body.serviceName, increment);
   res.json({
     "status": true
   });
   console.log("New custom service added");
+},1000);
 });
 
 app.post('/GET-GARAGE', function (req, res) {

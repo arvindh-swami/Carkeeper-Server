@@ -18,8 +18,10 @@ module.exports = {
 		updateUser,
 		removeUser,
 		getUser,
-		checkNotif
+		checkNotif,
 	}
+
+const axios = require('axios');
 
 // Create Functions
 
@@ -66,7 +68,7 @@ function addCar(userRef, uid, carName, make, model, year, level) {
   });
 }
 
-function addService(userRef, uid, carName, serviceName, priorDate, nextDate, increment) {
+function addService(userRef, uid, carName, serviceName, increment) {
   var ref = userRef.child(uid).child("Garage").child(carName).child("Service List");
   var serviceCount;
   ref.once("value").then(function(snapshot){
@@ -76,8 +78,8 @@ function addService(userRef, uid, carName, serviceName, priorDate, nextDate, inc
       [serviceName]: ""
     })
     ref.child(serviceName).update({
-      "priorDates": priorDate,
-      "nextDate": nextDate,
+      "priorDates": "",
+      "nextDate": "",
       "increment": increment
     })
   });
@@ -264,21 +266,41 @@ function resetPassword(userRef, uid, oldPassword, newPassword, callback) {
 
 function forgotPassword(userRef, email, callback) {
   var ref = userRef;
+	var found=false;
 	ref.once("value").then(function(snapshot) {
     snapshot.forEach(function(childSnapshot) {
   		uid=childSnapshot.key;
 			var ref2=userRef.child(uid);
 			ref2.once("value").then(function(babySnapshot) {
-				var emailId=babySnapshot.email;
+				var emailId=babySnapshot.val().email;
 				var name=babySnapshot.firstname;
-				if(emailId==email) {
-					console.log(email);
-					emailjs.send("gmail","forgot_password",{"email":email,"name":name,"action_url":"bit.ly/CarKeeper"});
+				if(emailId === email) {
+					found=true;
+          var data = {
+            service_id: 'gmail',
+            template_id: 'forgot_password',
+            user_id: 'user_dIUsSOu0uyfAzEOurtMFv',
+            template_params: {
+              "email":email,
+              "name":name,
+              "action_url":("https://carkeeper-90b76.firebaseapp.com/home/forgot/"+uid)
+            }
+          };
+          axios.post('https://api.emailjs.com/api/v1.0/email/send',{
+            ...data,
+          }).catch((e)=>{
+            console.log(e);
+            callback(false);
+          })
 					callback(true);
+          return;
 				}
 			});
 		});
-		callback(false);
+		setTimeout(function() {
+			if(!found)
+			callback(false);
+		},1000);
 	});
 }
 
@@ -333,10 +355,10 @@ function getUser(userRef, uid, callback) {
 	});
 }
 
-function checkNotif(userRef, uid) {
+function checkNotif(userRef, uid, callback) {
 	var ref = userRef.child(uid).child("Garage");
 	var json = {};
-	var servicesDue="\n";
+	var servicesDue="";
 	var numServicesDue=0;
 	var dateDue;
 	ref.once("value").then(function(snapshot) {
@@ -344,14 +366,13 @@ function checkNotif(userRef, uid) {
         var key = childSnapshot.key;
 				var b=true;
 				var b2=false;
-        if (key != "carCount") {
+				if (key != "carCount") {
 					getCar(userRef, uid, key, (services)=> {
 							for(var service in services) {
 								var dt = services[service]["nextDate"];
 								var nextD = new Date(dt.substring(0,4),dt.substring(dt.indexOf('-')+1,dt.lastIndexOf('-'))-1,dt.substring(dt.lastIndexOf('-')+1));
 								var today = new Date();
 								var dif = Math.floor((Date.UTC(nextD.getFullYear(), nextD.getMonth(), nextD.getDate()) - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()) ) /(1000 * 60 * 60 * 24));
-								console.log(dif);
 								if(dif==1) {
 									dateDue=dt;
 									b2=true;
@@ -360,27 +381,46 @@ function checkNotif(userRef, uid) {
 										servicesDue += key+": "+service+", ";
 									}
 									else {
-										servicesDue+=servicesDue+service+", ";
+										servicesDue+=service+", ";
 									}
 									numServicesDue++;
 								}
 							}
-						})
-						if(b2) {
-							servicesDue = servicesDue.substring(0,servicesDue.length()-2);
-							servicesDue+="\n";
-						}
-					}
+							if(b2) {
+								servicesDue = servicesDue.substring(0,servicesDue.length-2);
+								servicesDue+=";  ";
+							}
+						});
+
+				}
     	});
   	});
-		console.log(servicesDue);
-		console.log(dateDue);
-		console.log(numServicesDue);
-		if(numServicesDue>0) {
-			//console.log(servicesDue);
-			//console.log(dateDue);
-			getUser(userRef, uid, (user) => {
-				emailjs.send("gmail", "service_soon", {"email":user[email],"service":servicesDue,"name":user[firstname],"date":dt,"action_url":"bit.ly/CarKeeper"});
-			})
-		}
+	 setTimeout(function() {
+		 //console.log(servicesDue)
+		 if(numServicesDue>0) {
+ 			getUser(userRef, uid, (user) => {
+ 				var data = {
+ 					service_id: 'gmail',
+ 					template_id: 'service_soon',
+ 					user_id: 'user_dIUsSOu0uyfAzEOurtMFv',
+ 					template_params: {
+ 						"email":user["email"],
+ 						"service":servicesDue,
+ 						"name":user["firstname"],
+ 						"date":dateDue,
+ 						"action_url":"bit.ly/CarKeeper"
+ 					}
+ 				}
+ 				axios.post('https://api.emailjs.com/api/v1.0/email/send',{
+           ...data,
+         }).catch((e)=>{
+           console.log(e);
+           callback(false);
+         })
+ 				callback(true);
+         return;
+ 			});
+ 		}
+	 },3000);
+
 	}
