@@ -217,6 +217,26 @@ app.post('/RESET-PASSWORD', function (req, res) {
   });
 });
 
+app.post('/CHANGE-PASSWORD', function (req, res) {
+  console.log('Received request for CHANGE PASSWORD:');
+  //create ENCRYPTED PASSWORD
+  var encryptedNewPassword = encrypt(req.body.password);
+  database.changePassword(userRef, req.body.uid, encryptedNewPassword, (x) => {
+      if(x) {
+        res.json({
+          "status": true
+        });
+        console.log("Password Changed");
+      }
+      else {
+        res.json({
+          "status": false
+        });
+        console.log("Error");
+      }
+  });
+});
+
 app.post('/FORGOT-PASSWORD', function(req,res) {
   console.log("Received request for FORGOT PASSWORD");
   database.forgotPassword(userRef, req.body.email, (userFound) => {

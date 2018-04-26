@@ -14,6 +14,7 @@ module.exports = {
     getIncrement,
 		getEmailId,
 		resetPassword,
+		changePassword,
 		forgotPassword,
 		updateUser,
 		removeUser,
@@ -273,6 +274,19 @@ function resetPassword(userRef, uid, oldPassword, newPassword, callback) {
 			callback(false);
     }
   });
+}
+
+function changePassword(userRef, uid, newPassword, callback) {
+  var ref = userRef.child(uid);
+	if(newPassword!="undefined") {
+		ref.update({
+			"password": newPassword
+		});
+		callback(true);
+	}
+	else {
+		callback(false);
+	}
 }
 
 function forgotPassword(userRef, email, callback) {
