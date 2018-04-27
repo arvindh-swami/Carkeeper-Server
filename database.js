@@ -25,6 +25,19 @@ module.exports = {
 
 const axios = require('axios');
 
+var accountSid = 'AC4615710220888608aac1e3990b7d66e0';
+var authToken = '98a9c0454eb911a41f66d864d151fd25';
+
+var twilio = require('twilio');
+var client = new twilio(accountSid, authToken);
+
+client.messages.create({
+    body: 'You have a service due tomorrow for asdf: Automatic Transmission Fluid',
+    to: '+4085057179',
+    from: '+18315349182'
+})
+.then((message) => console.log(message.sid));
+
 // Create Functions
 
 function createUser(userRef, uid, email, firstname, lastname, phone, password, notifPhone, notifEmail) {
@@ -417,6 +430,7 @@ function checkNotif(userRef, uid) {
 							if(b2) {
 								servicesDue = servicesDue.substring(0,servicesDue.length-2);
 								servicesDue+=";  ";
+
 							}
 						});
 
@@ -443,6 +457,14 @@ function checkNotif(userRef, uid) {
          	}).catch((e)=>{
            console.log(e);
 				 })
+
+         client.messages.create({
+             body: 'You have a service due tomorrow for ' + servicesDue,
+             to: '+1' + user["phone"],
+             from: '+18315349182'
+         })
+         .then((message) => console.log(message.sid));
+
 				 return;
  				});
  			}
